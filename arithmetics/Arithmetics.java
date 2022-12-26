@@ -21,25 +21,6 @@ public class Arithmetics {
         expression.countVariables(variableSet);
     }
 
-    public static Arithmetics parseExpression(String expr){ //парсим выражение из строки
-        Arithmetics newExpr = new Arithmetics();
-        newExpr.expression = parseExpr(expr);
-        return null;
-    }
-
-    private static Expression parseExpr(String expr){
-        //ищем подвыражения в скобках
-        int firstBracketPos = expr.indexOf('(');
-        int lastBracketPos = expr.lastIndexOf(')');
-        Expression subExpr = null;
-        if(firstBracketPos != -1){
-            subExpr = parseExpr(expr.substring(firstBracketPos+1, lastBracketPos));
-        }
-        //ищем возведение в степень
-
-        return null;
-    }
-
     public Arithmetics cloneExpression(){ //копирование
         Arithmetics newExpr = new Arithmetics();
         newExpr.expression = this.expression.copy();

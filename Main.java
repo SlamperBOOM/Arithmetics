@@ -2,16 +2,9 @@ import arithmetics.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args){
-        /*Scanner reader = new Scanner(System.in);
-        StringBuilder builder = new StringBuilder();
-        while(reader.hasNextLine()){
-            builder.append(reader.nextLine());
-        }
-        Arithmetics expression = Arithmetics.parseExpression(builder.toString());*/
         Arithmetics expression = Arithmetics.createExpression(new Mul(
                 new Sum(
                         new Div(

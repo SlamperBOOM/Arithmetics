@@ -118,12 +118,18 @@ public class Div extends Expression{
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        if(argument1.getType() == ExprType.NUM || argument1.getType() == ExprType.MUL || argument1.getType() == ExprType.DIV){
+        if(argument1.getType() == ExprType.NUM
+                || argument1.getType() == ExprType.VARIABLE
+                || argument1.getType() == ExprType.MUL
+                || argument1.getType() == ExprType.DIV){
             builder.append(argument1).append("/");
         }else{
             builder.append("(").append(argument1).append(")/");
         }
-        if(argument2.getType() == ExprType.NUM || argument2.getType() == ExprType.MUL || argument2.getType() == ExprType.DIV){
+        if(argument2.getType() == ExprType.NUM
+                || argument2.getType() == ExprType.VARIABLE
+                || argument2.getType() == ExprType.MUL
+                || argument2.getType() == ExprType.DIV){
             builder.append(argument2);
         }else{
             builder.append("(").append(argument2).append(")");
