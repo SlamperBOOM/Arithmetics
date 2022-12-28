@@ -7,62 +7,46 @@ import java.util.Set;
 public class Log extends Expression{
     private final Expression argument;
 
-    public Log(Expression expr1){
+    private Log(Expression expr1){
         argument = expr1;
     }
 
-    @Override
-    protected double calculate(double variableValue) {
-        return Math.log(argument.calculate(variableValue));
-    }
-
-    @Override
-    protected ExprType getType() {
-        return ExprType.LOG;
-    }
-
-    @Override
-    protected Expression calculate(Map<String, Double> variableMap) {
-        Expression newArg = argument.calculate(variableMap);
-        if(newArg.getType() == ExprType.NUM){
-            return new Num(Math.log(((Num)newArg).getNumber()));
-        }else {
-            return copy();
+    public static Expression create(Expression expr){
+        if(expr.getClass() == Num.class && ((Num)expr).number == 1){
+            return new Num(0);
+        } else if(expr.getClass() == Num.class){
+            return new Num(Math.log(((Num)expr).number));
+        }else{
+            return new Log(expr.copy());
         }
     }
 
     @Override
-    protected Expression calculate(String varName, double value) {
-        Expression expr = argument.calculate(varName, value);
-        if(expr.getType() == ExprType.NUM){
-            return new Num(Math.log(((Num)expr).getNumber()));
-        }else {
-            return copy();
-        }
+    public double calc(double variableValue) {
+        return Math.log(argument.calc(variableValue));
+    }
+
+    @Override
+    public Expression calculate(Map<String, Double> variableMap) {
+        return Log.create(argument.calculate(variableMap));
+    }
+
+    @Override
+    public Expression calculate(String varName, double value) {
+        return Log.create(argument.calculate(varName, value));
     }
 
     @Override
     public Expression copy() {
-        return new Log(argument.copy());
+        return Log.create(argument);
     }
 
     @Override
-    protected Expression derivative(String derivativeVariable) {
-        return new Div(
+    public Expression derivative(String derivativeVariable) {
+        return Div.create(
                 new Num(1),
-                argument.copy()
+                argument
         );
-    }
-
-    @Override
-    protected Expression simplify() {
-        Expression simple = argument.simplify();
-
-        if(simple.getType() == ExprType.NUM && ((Num)simple).getNumber() == 1){
-            return new Num(1);
-        }else{
-            return new Log(simple);
-        }
     }
 
     @Override
@@ -71,11 +55,36 @@ public class Log extends Expression{
     }
 
     @Override
-    protected boolean equals(Expression expression) {
-        if(expression.getType() != ExprType.SUB){
+    public Expression add(Expression otherExpression) {
+        return Sum.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression subtract(Expression otherExpression) {
+        return Sub.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression multiply(Expression otherExpression) {
+        return Mul.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression divide(Expression otherExpression) {
+        return Div.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression pow(Expression otherExpression) {
+        return Pow.create(this, otherExpression);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if(object.getClass() != this.getClass()){
             return false;
         }else{
-            return argument.equals(((Log)expression).argument);
+            return argument.equals(((Log)object).argument);
         }
     }
 

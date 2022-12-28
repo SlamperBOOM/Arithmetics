@@ -4,33 +4,24 @@ import java.util.Map;
 import java.util.Set;
 
 public class Num extends Expression {
-    private final double number;
+    protected final double number;
 
     public Num(double number){
         this.number = number;
     }
 
-    protected double getNumber(){
+    @Override
+    protected double calc(double variableValue) {
         return number;
     }
 
     @Override
-    protected double calculate(double variableValue) {
-        return number;
-    }
-
-    @Override
-    protected ExprType getType() {
-        return ExprType.NUM;
-    }
-
-    @Override
-    protected Expression calculate(Map<String, Double> variableMap) {
+    public Expression calculate(Map<String, Double> variableMap) {
         return copy();
     }
 
     @Override
-    protected Expression calculate(String varName, double value) {
+    public Expression calculate(String varName, double value) {
         return copy();
     }
 
@@ -40,13 +31,8 @@ public class Num extends Expression {
     }
 
     @Override
-    protected Expression derivative(String derivativeVariable) {
+    public Expression derivative(String derivativeVariable) {
         return new Num(0);
-    }
-
-    @Override
-    protected Expression simplify() {
-        return this;
     }
 
     @Override
@@ -55,11 +41,36 @@ public class Num extends Expression {
     }
 
     @Override
-    protected boolean equals(Expression expression) {
-        if(expression.getType() != ExprType.NUM){
+    public Expression add(Expression otherExpression) {
+        return Sum.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression subtract(Expression otherExpression) {
+        return Sub.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression multiply(Expression otherExpression) {
+        return Mul.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression divide(Expression otherExpression) {
+        return Div.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression pow(Expression otherExpression) {
+        return Pow.create(this, otherExpression);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if(this.getClass() != object.getClass()){
             return false;
-        }else {
-            return this.number == ((Num) expression).number;
+        }else{
+            return this.number == ((Num) object).number;
         }
     }
 

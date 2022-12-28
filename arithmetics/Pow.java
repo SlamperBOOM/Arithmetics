@@ -5,73 +5,60 @@ import java.util.Set;
 
 //возведение в степень
 public class Pow extends Expression{
-    private final Expression argument1;
-    private final Expression argument2;
+    protected final Expression argument1;
+    protected final Expression argument2;
 
-    public Pow(Expression expr1, Expression expr2){
+    private Pow(Expression expr1, Expression expr2){
         argument1 = expr1;
         argument2 = expr2;
     }
 
-    @Override
-    protected double calculate(double variableValue) {
-        return Math.pow(argument1.calculate(variableValue), argument2.calculate(variableValue));
-    }
-
-    @Override
-    protected ExprType getType() {
-        return ExprType.POW;
-    }
-
-    @Override
-    protected Expression calculate(Map<String, Double> variableMap) {
-        Expression expr1 = argument1.calculate(variableMap);
-        Expression expr2 = argument2.calculate(variableMap);
-        if(expr1.getType() != ExprType.NUM || expr2.getType() != ExprType.NUM){
-            return new Pow(expr1, expr2);
+    public static Expression create(Expression expr1, Expression expr2){ //входящие выражения копируются
+        if(expr1.getClass() == Num.class && expr2.getClass() == Num.class){
+            return new Num(Math.pow(((Num)expr1).number, ((Num)expr2).number));
+        } else if((expr1.getClass() == Num.class && ((Num)expr1).number == 1) ||
+                (expr2.getClass() == Num.class && ((Num)expr2).number == 0)){
+            return new Num(1);
+        }else if(expr2.getClass() == Num.class && ((Num)expr2).number == 1){
+            return expr1.copy();
         }else{
-            return new Num(Math.pow(((Num)expr1).getNumber(), ((Num)expr2).getNumber()));
+            return new Pow(expr1.copy(), expr2.copy());
         }
     }
 
     @Override
-    protected Expression calculate(String varName, double value) {
-        Expression expr1 = argument1.calculate(varName, value);
-        Expression expr2 = argument2.calculate(varName, value);
-        if(expr1.getType() != ExprType.NUM || expr2.getType() != ExprType.NUM){
-            return new Pow(expr1, expr2);
-        }else{
-            return new Num(Math.pow(((Num)expr1).getNumber(), ((Num)expr2).getNumber()));
-        }
+    protected double calc(double variableValue) {
+        return Math.pow(argument1.calc(variableValue), argument2.calc(variableValue));
     }
 
     @Override
-    public Expression copy() {
-        return new Pow(argument1.copy(), argument2.copy());
-    }
-
-    @Override
-    protected Expression derivative(String derivativeVariable) { //используется общий вид производной степенной функции
-        Expression der = new Mul(argument2.copy(), new Log(argument1.copy())).derivative(derivativeVariable);
-        return new Mul(
-                new Pow(argument1.copy(), argument2.copy()),
-                der
+    public Expression calculate(Map<String, Double> variableMap) {
+        return Pow.create(
+                argument1.calculate(variableMap),
+                argument2.calculate(variableMap)
         );
     }
 
     @Override
-    protected Expression simplify() {
-        Expression simple1 = argument1.simplify();
-        Expression simple2 = argument2.simplify();
+    public Expression calculate(String varName, double value) {
+        return Pow.create(
+                argument1.calculate(varName, value),
+                argument2.calculate(varName, value)
+        );
+    }
 
-        if((simple1.getType() == ExprType.NUM && ((Num)simple1).getNumber() == 1) ||
-                (simple2.getType() == ExprType.NUM && ((Num)simple2).getNumber() == 0)){
-            return new Num(1);
-        }else if(simple2.getType() == ExprType.NUM && ((Num)simple2).getNumber() == 1){
-            return simple1;
-        }else{
-            return new Pow(simple1, simple2);
-        }
+    @Override
+    public Expression copy() {
+        return Pow.create(argument1, argument2);
+    }
+
+    @Override
+    public Expression derivative(String derivativeVariable) { //используется общий вид производной степенной функции
+        Expression der = Mul.create(argument2, Log.create(argument1)).derivative(derivativeVariable);
+        return Mul.create(
+                Pow.create(argument1, argument2),
+                der
+        );
     }
 
     @Override
@@ -81,28 +68,53 @@ public class Pow extends Expression{
     }
 
     @Override
-    protected boolean equals(Expression expression) {
-        if(expression.getType() != ExprType.SUB){
+    public Expression add(Expression otherExpression) {
+        return Sum.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression subtract(Expression otherExpression) {
+        return Sub.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression multiply(Expression otherExpression) {
+        return Mul.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression divide(Expression otherExpression) {
+        return Div.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression pow(Expression otherExpression) {
+        return Pow.create(this, otherExpression);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if(object.getClass() != this.getClass()){
             return false;
         }else{
-            return argument1.equals(((Pow)expression).argument1) &&
-                    argument2.equals(((Pow)expression).argument2);
+            return argument1.equals(((Pow)object).argument1) &&
+                    argument2.equals(((Pow)object).argument2);
         }
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        if(argument1.getType() == ExprType.NUM
-                || argument1.getType() == ExprType.VARIABLE
-                || argument1.getType() == ExprType.LOG){
+        if(argument1.getClass() == Num.class
+                || argument1.getClass() == Variable.class
+                || argument1.getClass() == Log.class){
             builder.append(argument1).append("^");
         }else{
             builder.append("(").append(argument1).append(")^");
         }
-        if(argument2.getType() == ExprType.NUM
-                || argument2.getType() == ExprType.VARIABLE
-                || argument2.getType() == ExprType.LOG){
+        if(argument2.getClass() == Num.class
+                || argument2.getClass() == Variable.class
+                || argument2.getClass() == Log.class){
             builder.append(argument2);
         }else{
             builder.append("(").append(argument1).append(")");

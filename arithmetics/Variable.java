@@ -4,24 +4,19 @@ import java.util.Map;
 import java.util.Set;
 
 public class Variable extends Expression{
-    private final String varName;
+    protected final String varName;
 
     public Variable(String name){
         varName = name;
     }
 
     @Override
-    protected double calculate(double variableValue) {
+    protected double calc(double variableValue) {
         return variableValue;
     }
 
     @Override
-    protected ExprType getType() {
-        return ExprType.VARIABLE;
-    }
-
-    @Override
-    protected Expression calculate(Map<String, Double> variableMap) {
+    public Expression calculate(Map<String, Double> variableMap) {
         if(variableMap.containsKey(varName)){
             return new Num(variableMap.get(varName));
         }else {
@@ -30,7 +25,7 @@ public class Variable extends Expression{
     }
 
     @Override
-    protected Expression calculate(String varName, double value) {
+    public Expression calculate(String varName, double value) {
         if(varName.equals(this.varName)){
             return new Num(value);
         }else{
@@ -44,7 +39,7 @@ public class Variable extends Expression{
     }
 
     @Override
-    protected Expression derivative(String derivativeVariable) {
+    public Expression derivative(String derivativeVariable) {
         if(this.varName.equals(derivativeVariable)){
             return new Num(1);
         }else{
@@ -53,21 +48,41 @@ public class Variable extends Expression{
     }
 
     @Override
-    protected Expression simplify() {
-        return this;
-    }
-
-    @Override
     protected void countVariables(Set<String> variables) {
         variables.add(varName);
     }
 
     @Override
-    protected boolean equals(Expression expression) {
-        if(expression.getType() != ExprType.VARIABLE){
+    public Expression add(Expression otherExpression) {
+        return Sum.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression subtract(Expression otherExpression) {
+        return Sub.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression multiply(Expression otherExpression) {
+        return Mul.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression divide(Expression otherExpression) {
+        return Div.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression pow(Expression otherExpression) {
+        return Pow.create(this, otherExpression);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if(this.getClass() != object.getClass()){
             return false;
         }else {
-            return this.varName.equals(((Variable)expression).varName);
+            return this.varName.equals(((Variable)object).varName);
         }
     }
 

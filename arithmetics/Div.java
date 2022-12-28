@@ -4,99 +4,79 @@ import java.util.*;
 
 //деление
 public class Div extends Expression{
-    private final Expression argument1;
-    private final Expression argument2;
+    protected final Expression argument1;
+    protected final Expression argument2;
 
-    public Div(Expression expr1, Expression expr2){
+    private Div(Expression expr1, Expression expr2){
         argument1 = expr1;
         argument2 = expr2;
     }
 
-    public Div(List<Expression> args){
-        if(args.size() == 2){
-            argument1 = args.get(0);
-            argument2 = args.get(1);
-        }else {
-            Div subDiv = new Div(args.get(0), args.get(1));
-            for (int i = 2; i < args.size() - 1; ++i) { //1*2*3*4*5 -> (((1*2)*3)*4)*5, для удобства дальнейшего счета
-                subDiv = new Div(subDiv, args.get(i));
-            }
-            argument1 = subDiv;
-            argument2 = args.get(args.size() - 1);
+    public static Expression create(Expression expr1, Expression expr2){ //входящие выражения копируются
+        if((expr1.getClass() == Num.class && ((Num)expr1).number == 0) &&
+                (expr2.getClass() == Num.class && ((Num)expr2).number != 0)){
+            return new Num(0);
+        } else if(expr1.getClass() == Num.class && expr2.getClass() == Num.class &&
+                ((Num)expr2).number == 0){
+            throw new ArithmeticException("Деление на 0");
+        }else if(expr1.getClass() == Num.class && expr2.getClass() == Num.class){
+            return new Num(((Num)expr1).number / ((Num)expr2).number);
+        }
+        else if(expr2.getClass() == Num.class && ((Num)expr2).number == 1){
+            return expr1.copy();
+        }else{
+            return new Div(expr1.copy(), expr2.copy());
         }
     }
 
     @Override
-    protected double calculate(double variableValue) {
-        if(argument2.calculate(variableValue) == 0){
+    public double calc(double variableValue) {
+        double arg2 = argument2.calc(variableValue);
+        if(arg2 == 0){
             throw new ArithmeticException("Деление на 0");
         }
-        return argument1.calculate(variableValue) / argument2.calculate(variableValue);
+        return argument1.calc(variableValue) / arg2;
     }
 
     @Override
-    protected ExprType getType() {
-        return ExprType.DIV;
-    }
-
-    @Override
-    protected Expression calculate(Map<String, Double> variableMap) {
-        Expression newArg1 = argument1.calculate(variableMap);
-        Expression newArg2 = argument2.calculate(variableMap);
-        if(newArg1.getType() != ExprType.NUM || newArg2.getType() != ExprType.NUM){
-            return new Div(newArg1, newArg2);
-        }else{
-            return new Num(((Num)newArg1).getNumber() / ((Num)newArg2).getNumber() );
-        }
-    }
-
-    @Override
-    protected Expression calculate(String varName, double value) {
-        Expression newArg1 = argument1.calculate(varName, value);
-        Expression newArg2 = argument2.calculate(varName, value);
-        if(newArg1.getType() != ExprType.NUM || newArg2.getType() != ExprType.NUM){
-            return new Div(newArg1, newArg2);
-        }else{
-            return new Num(((Num)newArg1).getNumber() / ((Num)newArg2).getNumber() );
-        }
-    }
-
-    @Override
-    public Expression copy() {
-        Expression newArg1 = argument1.copy();
-        Expression newArg2 = argument2.copy();
-        return new Div(newArg1, newArg2);
-    }
-
-    @Override
-    protected Expression derivative(String derivativeVariable) {
-        Expression newArg1 = argument1.derivative(derivativeVariable);
-        Expression newArg2 = argument2.derivative(derivativeVariable);
-        return new Div(
-                new Sub(
-                        new Mul(newArg1, argument2.copy()),
-                        new Mul(argument1.copy(), newArg2)
-                ),
-                new Pow(
-                        argument2.copy(),
-                        new Num(2)
-                )
+    public Expression calculate(Map<String, Double> variableMap) {
+        return Div.create(
+                argument1.calculate(variableMap),
+                argument2.calculate(variableMap)
         );
     }
 
     @Override
-    protected Expression simplify() {
-        Expression simple1 = argument1.simplify();
-        Expression simple2 = argument2.simplify();
+    public Expression calculate(String varName, double value) {
+        return Div.create(
+                argument1.calculate(varName, value),
+                argument2.calculate(varName, value)
+        );
+    }
 
-        if(simple2.getType() == ExprType.NUM && ((Num)simple2).getNumber() == 1){
-            return simple1;
-        }else if((simple1.getType() == ExprType.NUM && ((Num)simple1).getNumber() == 0) &&
-                (simple2.getType() == ExprType.NUM && ((Num)simple2).getNumber() != 0)){
-            return new Num(0);
-        }else{
-            return new Div(simple1, simple2);
-        }
+    @Override
+    public Expression copy() {
+        return Div.create(argument1, argument2);
+    }
+
+    @Override
+    public Expression derivative(String derivativeVariable) {
+        return Div.create(
+                Sub.create(
+                        Mul.create(
+                                argument1.derivative(derivativeVariable),
+                                argument2
+                        ),
+                        Mul.create(
+                                argument1,
+                                argument2.derivative(derivativeVariable)
+                        )
+                ),
+                Pow.create(
+                        argument2,
+                        new Num(2)
+                )
+        );
     }
 
     @Override
@@ -106,30 +86,55 @@ public class Div extends Expression{
     }
 
     @Override
-    protected boolean equals(Expression expression) {
-        if(expression.getType() != ExprType.SUB){
+    public Expression add(Expression otherExpression) {
+        return Sum.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression subtract(Expression otherExpression) {
+        return Sub.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression multiply(Expression otherExpression) {
+        return Mul.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression divide(Expression otherExpression) {
+        return Div.create(this, otherExpression);
+    }
+
+    @Override
+    public Expression pow(Expression otherExpression) {
+        return Pow.create(this, otherExpression);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if(object.getClass() != this.getClass()){
             return false;
         }else{
-            return argument1.equals(((Div)expression).argument1) &&
-                    argument2.equals(((Div)expression).argument2);
+            return argument1.equals(((Div)object).argument1) &&
+                    argument2.equals(((Div)object).argument2);
         }
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        if(argument1.getType() == ExprType.NUM
-                || argument1.getType() == ExprType.VARIABLE
-                || argument1.getType() == ExprType.MUL
-                || argument1.getType() == ExprType.DIV){
+        if(argument1.getClass() == Num.class
+                || argument1.getClass() == Variable.class
+                || argument1.getClass() == Mul.class
+                || argument1.getClass() == Div.class){
             builder.append(argument1).append("/");
         }else{
             builder.append("(").append(argument1).append(")/");
         }
-        if(argument2.getType() == ExprType.NUM
-                || argument2.getType() == ExprType.VARIABLE
-                || argument2.getType() == ExprType.MUL
-                || argument2.getType() == ExprType.DIV){
+        if(argument2.getClass() == Num.class
+                || argument2.getClass() == Variable.class
+                || argument2.getClass() == Mul.class
+                || argument2.getClass() == Div.class){
             builder.append(argument2);
         }else{
             builder.append("(").append(argument2).append(")");
