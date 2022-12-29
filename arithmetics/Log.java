@@ -44,7 +44,7 @@ public class Log extends Expression{
     @Override
     public Expression derivative(String derivativeVariable) {
         return Div.create(
-                new Num(1),
+                argument.derivative(derivativeVariable),
                 argument
         );
     }
